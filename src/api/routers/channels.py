@@ -14,8 +14,13 @@ from ..models.schemas import (
 )
 from ...core.database import get_db
 from ...core.exceptions import ChannelNotFoundError
+from ...core.encryption import encrypt_token
 
 router = APIRouter(prefix="/channels", tags=["Channels"])
+
+
+# 需要加密的字段
+SENSITIVE_FIELDS = ['access_token', 'refresh_token', 'api_key', 'api_secret', 'client_secret']
 
 
 @router.post("/", response_model=ChannelResponse, status_code=status.HTTP_201_CREATED)
@@ -33,11 +38,17 @@ async def create_channel(
             detail=f"Invalid platform: {data.platform}"
         )
     
+    # 加密敏感配置
+    config = data.config or {}
+    for field in SENSITIVE_FIELDS:
+        if field in config and config[field]:
+            config[field] = encrypt_token(str(config[field]))
+    
     channel = Channel(
         platform=platform,
         name=data.name,
         description=data.description,
-        config=data.config,
+        config=config,
         enabled=data.enabled,
     )
     
@@ -132,6 +143,13 @@ async def update_channel(
     
     # 更新字段
     update_data = data.model_dump(exclude_unset=True)
+    
+    # 如果更新 config，需要加密敏感字段
+    if 'config' in update_data and update_data['config']:
+        for field in SENSITIVE_FIELDS:
+            if field in update_data['config'] and update_data['config'][field]:
+                update_data['config'][field] = encrypt_token(str(update_data['config'][field]))
+    
     for field, value in update_data.items():
         setattr(channel, field, value)
     

@@ -52,7 +52,14 @@ def fetch_channel(self, channel_id: str, platform: str) -> dict:
         channel_id: 渠道 UUID
         platform: 平台类型 (discord, reddit, qq, wecom)
     """
-    return asyncio.run(_fetch_channel_async(str(channel_id), platform))
+    # 创建新的事件循环来运行异步代码
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        result = loop.run_until_complete(_fetch_channel_async(str(channel_id), platform))
+        return result
+    finally:
+        loop.close()
 
 
 async def _fetch_channel_async(channel_id: str, platform: str) -> dict:
@@ -84,14 +91,15 @@ async def _fetch_channel_async(channel_id: str, platform: str) -> dict:
             # 获取 scraper
             scraper = ScraperRegistry.get_scraper(Platform(platform))
             
-            # 构建配置
+            # 构建配置（解密敏感字段）
             config_dict = channel.config or {}
+            from ..core.encryption import decrypt_token
             from ..scrapers.base import ChannelConfig
             config = ChannelConfig(
                 channel_id=str(channel.id),
                 platform=Platform(platform),
-                access_token=config_dict.get("access_token", ""),
-                refresh_token=config_dict.get("refresh_token"),
+                access_token=decrypt_token(config_dict.get("access_token", "")),
+                refresh_token=decrypt_token(config_dict.get("refresh_token")) if config_dict.get("refresh_token") else None,
                 extra_config=config_dict,
             )
             
@@ -144,7 +152,12 @@ async def _fetch_channel_async(channel_id: str, platform: str) -> dict:
 @celery_app.task(name="fetch_all_channels")
 def fetch_all_channels() -> dict:
     """抓取所有启用的渠道"""
-    return asyncio.run(_fetch_all_channels_async())
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        return loop.run_until_complete(_fetch_all_channels_async())
+    finally:
+        loop.close()
 
 
 async def _fetch_all_channels_async() -> dict:
@@ -181,7 +194,12 @@ def analyze_message(self, channel_id: str, platform_message_id: str) -> dict:
         channel_id: 渠道 ID
         platform_message_id: 平台消息 ID
     """
-    return asyncio.run(_analyze_message_async(channel_id, platform_message_id))
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        return loop.run_until_complete(_analyze_message_async(channel_id, platform_message_id))
+    finally:
+        loop.close()
 
 
 async def _analyze_message_async(channel_id: str, platform_message_id: str) -> dict:
@@ -262,7 +280,12 @@ async def _analyze_message_async(channel_id: str, platform_message_id: str) -> d
 @celery_app.task(name="analyze_pending_messages")
 def analyze_pending_messages(limit: int = 100) -> dict:
     """批量分析待处理消息"""
-    return asyncio.run(_analyze_pending_messages_async(limit))
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        return loop.run_until_complete(_analyze_pending_messages_async(limit))
+    finally:
+        loop.close()
 
 
 async def _analyze_pending_messages_async(limit: int = 100) -> dict:
@@ -307,7 +330,12 @@ async def _analyze_pending_messages_async(limit: int = 100) -> dict:
 @celery_app.task(bind=True, name="cleanup_old_analysis_tasks")
 def cleanup_old_analysis_tasks(self, days: int = 30) -> dict:
     """清理旧的分析任务记录"""
-    return asyncio.run(_cleanup_old_tasks_async(days))
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        return loop.run_until_complete(_cleanup_old_tasks_async(days))
+    finally:
+        loop.close()
 
 
 async def _cleanup_old_tasks_async(days: int) -> dict:

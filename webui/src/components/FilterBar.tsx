@@ -1,9 +1,8 @@
 /**
  * 渠道切换和筛选组件
  */
-import React from 'react';
 import { clsx } from 'clsx';
-import { Search, Filter, X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { useAppStore } from '../stores/appStore';
 
 const platforms = [

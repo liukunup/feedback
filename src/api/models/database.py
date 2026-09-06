@@ -7,6 +7,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import (
     String, Text, Boolean, DateTime, ForeignKey, Index, JSON, ARRAY, Enum as SQLEnum
 )
+from sqlalchemy.types import Enum
 from sqlalchemy.dialects.postgresql import UUID as PGUUID, JSONB
 # VECTOR 需要 pgvector 扩展，如不需要向量搜索可注释掉
 # from sqlalchemy.dialects.postgresql import VECTOR
@@ -44,7 +45,10 @@ class Channel(Base):
     __tablename__ = "channels"
     
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
-    platform: Mapped[Platform] = mapped_column(SQLEnum(Platform), nullable=False)
+    platform: Mapped[Platform] = mapped_column(
+        SQLEnum(Platform, values_callable=lambda x: [e.value for e in x]),
+        nullable=False
+    )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     
@@ -97,7 +101,10 @@ class Message(Base):
     channel_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)  # 如频道名、subreddit
     
     # AI 分析结果
-    sentiment: Mapped[Optional[Sentiment]] = mapped_column(SQLEnum(Sentiment), nullable=True)
+    sentiment: Mapped[Optional[Sentiment]] = mapped_column(
+        SQLEnum(Sentiment, values_callable=lambda x: [e.value for e in x]),
+        nullable=True
+    )
     categories: Mapped[Optional[List[str]]] = mapped_column(ARRAY(String), nullable=True)
     entities: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)  # {users: [], orgs: [], topics: []}
     summary: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
@@ -128,7 +135,10 @@ class FetchLog(Base):
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     channel_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("channels.id"), nullable=False)
     
-    status: Mapped[FetchStatus] = mapped_column(SQLEnum(FetchStatus), nullable=False)
+    status: Mapped[FetchStatus] = mapped_column(
+        Enum(FetchStatus, name='fetch_status', create_type=False, values_callable=lambda x: [e.value for e in x]),
+        nullable=False
+    )
     messages_count: Mapped[int] = mapped_column(default=0)
     new_messages_count: Mapped[int] = mapped_column(default=0)
     error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

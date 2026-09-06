@@ -3,6 +3,7 @@
 """
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy import text
 from typing import AsyncGenerator
 
 from .config import get_settings
@@ -49,9 +50,8 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 async def init_db():
     """初始化数据库 (创建表)"""
     async with engine.begin() as conn:
-        # 启用 pgvector 扩展
-        await conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
-        await conn.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm")
+        # 启用扩展
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
         # 创建所有表
         await conn.run_sync(Base.metadata.create_all)
 

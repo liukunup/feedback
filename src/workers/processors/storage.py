@@ -22,16 +22,18 @@ class StorageProcessor:
         self.session = session
     
     async def save_messages(self, channel_id: UUID, messages: List[Message]) -> int:
-        """保存消息到数据库
+        """保存消息到数据库，使用 platform_message_id 避免重复
+        
+        如果消息已存在，则更新内容；否则插入新消息。
         
         Args:
             channel_id: 渠道 ID
             messages: 消息列表
             
         Returns:
-            新增消息数量
+            新增/更新消息数量
         """
-        new_count = 0
+        saved_count = 0
         
         for msg in messages:
             # 检查是否已存在
@@ -43,35 +45,41 @@ class StorageProcessor:
                     )
                 )
             )
+            db_message = existing.scalar_one_or_none()
             
-            if existing.scalar_one_or_none():
-                # 已存在，跳过
-                continue
-            
-            # 创建新消息
-            db_message = DBMessage(
-                channel_id=channel_id,
-                platform_message_id=msg.platform_id,
-                content=msg.content,
-                author_id=msg.author_id,
-                author_name=msg.author_name,
-                author_avatar=msg.author_avatar,
-                created_at=msg.created_at,
-                metadata=msg.metadata,
-                attachments=msg.attachments,
-                channel_name=msg.channel_name,
-                analyzed=False,
-            )
-            
-            self.session.add(db_message)
-            new_count += 1
+            if db_message:
+                # 已存在，更新内容（保留分析结果）
+                if db_message.content != msg.content:
+                    db_message.content = msg.content
+                    db_message.author_name = msg.author_name
+                    db_message.author_avatar = msg.author_avatar
+                    logger.debug(f"Updated message {msg.platform_id}")
+                    saved_count += 1
+                # 如果内容相同则跳过
+            else:
+                # 新消息，插入
+                db_message = DBMessage(
+                    channel_id=channel_id,
+                    platform_message_id=msg.platform_id,
+                    content=msg.content,
+                    author_id=msg.author_id,
+                    author_name=msg.author_name,
+                    author_avatar=msg.author_avatar,
+                    created_at=msg.created_at,
+                    extra_metadata=msg.metadata,  # 注意：使用 extra_metadata 字段
+                    attachments=msg.attachments,
+                    channel_name=msg.channel_name,
+                    analyzed=False,
+                )
+                self.session.add(db_message)
+                saved_count += 1
         
         await self.session.flush()
         
-        if new_count > 0:
-            logger.info(f"Saved {new_count} new messages for channel {channel_id}")
+        if saved_count > 0:
+            logger.info(f"Saved {saved_count} messages for channel {channel_id}")
         
-        return new_count
+        return saved_count
     
     async def get_message_by_platform_id(
         self, 

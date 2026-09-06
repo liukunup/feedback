@@ -61,12 +61,12 @@ CREATE TABLE IF NOT EXISTS messages (
     author_id VARCHAR(255) NOT NULL,
     author_name VARCHAR(255) NOT NULL,
     author_avatar VARCHAR(500),
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     
     -- 元数据
-    metadata JSONB,
+    extra_metadata JSONB,
     attachments JSONB,
-    channel_name VARCHAR(255),  -- 如频道名、subreddit、群名
+    channel_name VARCHAR(255),
     
     -- AI 分析结果
     sentiment sentiment,
@@ -77,10 +77,7 @@ CREATE TABLE IF NOT EXISTS messages (
     
     -- 状态
     analyzed BOOLEAN DEFAULT FALSE,
-    is_deleted BOOLEAN DEFAULT FALSE,
-    
-    -- 时间戳
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    is_deleted BOOLEAN DEFAULT FALSE
 );
 
 -- 索引
@@ -97,9 +94,9 @@ CREATE INDEX IF NOT EXISTS idx_messages_categories ON messages USING GIN(categor
 -- GIN 索引用于 JSONB 搜索 (entities)
 CREATE INDEX IF NOT EXISTS idx_messages_entities ON messages USING GIN(entities);
 
--- 全文搜索索引 (支持中英文)
+-- 全文搜索索引 (仅英文)
 CREATE INDEX IF NOT EXISTS idx_messages_content_fts ON messages USING GIN(
-    to_tsvector('chinese', content) || to_tsvector('english', content)
+    to_tsvector('english', content)
 );
 
 -- 复合唯一索引: 渠道 + 平台消息ID

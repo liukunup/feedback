@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # ============ 数据库 ============
   postgres:
-    image: pgvector/pgvector:pg16
+    image: postgres:16-alpine
     container_name: social_feed_postgres
     environment:
       POSTGRES_DB: social_feed

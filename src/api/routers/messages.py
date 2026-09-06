@@ -63,9 +63,7 @@ async def list_messages(
         stmt = stmt.where(Message.analyzed == analyzed)
     
     # 计数
-    count_stmt = select(func.count(Message.id))
-    # 应用相同的过滤条件
-    count_stmt = stmt.where(Message.is_deleted == False)
+    count_stmt = select(func.count(Message.id)).where(Message.is_deleted == False)
     if channel_id:
         count_stmt = count_stmt.where(Message.channel_id == channel_id)
     if platform:

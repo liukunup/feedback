@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     
     # Discord
     discord_bot_token: Optional[str] = None
+    discord_http_proxy: Optional[str] = None   # Discord HTTP 代理
+    discord_https_proxy: Optional[str] = None  # Discord HTTPS 代理
     
     # Reddit
     reddit_client_id: Optional[str] = None
@@ -43,8 +45,13 @@ class Settings(BaseSettings):
     
     # 安全
     secret_key: str = "change-me-in-production"
-    allowed_origins: list[str] = ["http://localhost:3000"]
+    allowed_origins: list[str] = ["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:5173"]
     
+    # 代理配置
+    http_proxy: Optional[str] = None
+    https_proxy: Optional[str] = None
+    no_proxy: Optional[str] = None
+
     # AI 分析
     ai_model: str = "gpt-4o-mini"
     ai_embedding_model: str = "text-embedding-3-small"

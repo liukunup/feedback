@@ -134,7 +134,7 @@ __pypackages__/
 *.egg-info/
 
 # pi agent files (do not track)
-.pi/
+.pi/channel-sessions/
 
 # Web UI build outputs
 webui/dist/

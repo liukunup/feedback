@@ -4,17 +4,39 @@
 import axios from 'axios';
 import type {
   Channel, ChannelCreate, ChannelUpdate,
-  Message, MessageListResponse, MessageDetailResponse,
+  MessageListResponse, MessageDetailResponse,
   SearchQuery, SearchResponse, StatisticsResponse
 } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
+
+// 将 snake_case 转换为 camelCase
+function toCamelCase(str: string): string {
+  return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+}
+
+function convertToCamelCase(obj: any): any {
+  if (Array.isArray(obj)) {
+    return obj.map(convertToCamelCase);
+  } else if (obj !== null && typeof obj === 'object') {
+    return Object.keys(obj).reduce((acc, key) => {
+      const camelKey = toCamelCase(key);
+      acc[camelKey] = convertToCamelCase(obj[key]);
+      return acc;
+    }, {} as any);
+  }
+  return obj;
+}
 
 const api = axios.create({
   baseURL: API_BASE,
   headers: {
     'Content-Type': 'application/json',
   },
+  transformResponse: [(data) => {
+    const parsed = JSON.parse(data);
+    return convertToCamelCase(parsed);
+  }],
 });
 
 // ============ 渠道 API ============

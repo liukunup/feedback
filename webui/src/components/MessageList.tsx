@@ -11,7 +11,6 @@ import {
   ThumbsDown, 
   Minus,
   Paperclip,
-  ExternalLink
 } from 'lucide-react';
 import type { Message, Sentiment, Platform } from '../types';
 
@@ -21,14 +20,6 @@ const platformIcons: Record<Platform, string> = {
   reddit: '📘',
   qq: '💬',
   wecom: '💼',
-};
-
-// 平台颜色
-const platformColors: Record<Platform, string> = {
-  discord: 'bg-indigo-500',
-  reddit: 'bg-orange-500',
-  qq: 'bg-green-500',
-  wecom: 'bg-blue-500',
 };
 
 // 情感图标
@@ -113,10 +104,10 @@ const MessageCard: React.FC<MessageCardProps> = ({ message, onClick }) => {
         <div className="flex items-center gap-2 text-sm text-gray-500">
           {sentimentIcons[message.sentiment as Sentiment]}
           <span>
-            {formatDistanceToNow(new Date(message.createdAt), {
+            {message.createdAt ? formatDistanceToNow(new Date(message.createdAt), {
               addSuffix: true,
               locale: zhCN,
-            })}
+            }) : '未知时间'}
           </span>
         </div>
       </div>

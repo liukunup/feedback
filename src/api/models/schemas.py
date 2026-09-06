@@ -15,11 +15,27 @@ class Platform(str, Enum):
     QQ = "qq"
     WECOM = "wecom"
 
+    @classmethod
+    def _missing_(cls, value):
+        # 忽略大小写
+        for member in cls:
+            if member.value.lower() == value.lower():
+                return member
+        return None
+
 
 class Sentiment(str, Enum):
     POSITIVE = "positive"
     NEUTRAL = "neutral"
     NEGATIVE = "negative"
+
+    @classmethod
+    def _missing_(cls, value):
+        # 忽略大小写
+        for member in cls:
+            if member.value.lower() == value.lower():
+                return member
+        return None
 
 
 # ============ Channel Schemas ============
@@ -67,7 +83,10 @@ class MessageBase(BaseModel):
 
 
 class MessageResponse(MessageBase):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+        populate_by_name=True,  # 允许通过原始名称填充
+    )
     
     id: UUID
     channel_id: UUID
@@ -77,7 +96,7 @@ class MessageResponse(MessageBase):
     author_avatar: Optional[str] = None
     created_at: datetime
     channel_name: Optional[str] = None
-    metadata: Optional[dict] = None
+    metadata: Optional[dict] = Field(default=None, validation_alias='extra_metadata')
     attachments: Optional[List[dict]] = None
     analyzed: bool
     platform: Optional[Platform] = None

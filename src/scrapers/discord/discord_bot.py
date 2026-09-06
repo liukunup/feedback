@@ -3,10 +3,19 @@ Discord Bot Scraper - 使用 discord.py
 """
 import asyncio
 import logging
+import os
 from datetime import datetime
 from typing import List, Optional, Dict, Any, Set, Callable
 
+import aiohttp
 import discord
+from discord.http import HTTPClient
+
+
+def _create_aiohttp_session_with_proxy(proxy_url: str = None) -> aiohttp.ClientSession:
+    """创建带代理的 aiohttp session"""
+    connector = aiohttp.TCPConnector(ssl=False) if proxy_url else None
+    return aiohttp.ClientSession(connector=connector)
 
 from ..base import BaseScraper, ChannelConfig, Message, Platform, ScraperRegistry
 from ...core.exceptions import AuthenticationError, ScraperError
@@ -88,25 +97,37 @@ class DiscordPyScraper(BaseScraper):
         self._event_callbacks: List[Callable] = []
         self._listener_task: Optional[asyncio.Task] = None
 
-    async def initialize(self, config: ChannelConfig) -> None:
+    async def initialize(self, config: ChannelConfig, timeout: int = 30) -> None:
         self._config = config
+
+        # 获取代理配置 (从环境变量读取)
+        proxy_url = os.environ.get('DISCORD_PROXY') or os.environ.get('HTTPS_PROXY')
+        self._proxy_url = proxy_url
+        logger.info(f"Discord proxy: {proxy_url or 'none'}")
 
         self._intents = discord.Intents.default()
         self._intents.message_content = True
         self._intents.messages = True
         self._intents.guilds = True
 
-        self._bot = DiscordBotClient(intents=self._intents)
+        # 创建 Bot 客户端，传入 proxy 参数
+        self._bot = DiscordBotClient(intents=self._intents, proxy=proxy_url)
 
+        # 启动 Bot（带超时）
+        async def _start_bot():
+            await self._bot.start(config.access_token)
+        
         try:
-            async with self._bot:
-                await self._bot.start(config.access_token)
+            # 使用 asyncio.wait_for 添加超时
+            await asyncio.wait_for(_start_bot(), timeout=timeout)
+            # 等待连接建立
+            await asyncio.wait_for(self._bot.connected.wait(), timeout=timeout)
+        except asyncio.TimeoutError:
+            raise ScraperError(f"Connection timeout after {timeout} seconds")
         except discord.errors.LoginFailure:
             raise AuthenticationError("Invalid Discord bot token")
         except Exception as e:
             raise ScraperError(f"Failed to connect: {e}")
-
-        await asyncio.wait_for(self._bot.connected.wait(), timeout=30)
         self._initialized = True
         logger.info(f"Discord scraper initialized, {len(self._bot.guilds)} guilds accessible")
 
