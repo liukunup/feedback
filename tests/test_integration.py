@@ -32,12 +32,12 @@ class TestScraperIntegration:
         assert scraper.platform == Platform.REDDIT
     
     @pytest.mark.asyncio
-    async def test_qq_ws_scraper_initialization(self):
-        """测试 QQ WebSocket Scraper 初始化"""
-        from src.scrapers.qq import QQWebSocketScraper
+    async def test_qq_ui_scraper_initialization(self):
+        """测试 QQ uiautomator2 Scraper 初始化"""
+        from src.scrapers.qq import QQUIAutomatorScraper
         from src.scrapers.base import Platform
         
-        scraper = QQWebSocketScraper()
+        scraper = QQUIAutomatorScraper()
         assert scraper is not None
         assert scraper.platform == Platform.QQ
     

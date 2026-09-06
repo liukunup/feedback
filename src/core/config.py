@@ -29,10 +29,9 @@ class Settings(BaseSettings):
     reddit_client_secret: Optional[str] = None
     reddit_user_agent: str = "SocialFeedAggregator/1.0"
     
-    # QQ (uiautomator2 或 go-cqhttp)
-    qq_device_id: Optional[str] = None          # 手机设备 ID (adb devices 中的 ID)
-    qq_ws_url: str = "ws://localhost:5700"     # go-cqhttp WebSocket
-    qq_access_token: Optional[str] = None
+    # QQ (uiautomator2)
+    qq_device_id: Optional[str] = None  # 手机设备 ID (adb devices 中的 ID，如 R3CR12345)
+    qq_auto_init: bool = True           # 自动初始化 uiautomator2
     
     # 企业微信
     wecom_corp_id: Optional[str] = None
