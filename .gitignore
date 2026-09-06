@@ -136,22 +136,21 @@ __pypackages__/
 # pi agent files (do not track)
 .pi/
 
-# Web build outputs
-web/dist/
-web/build/
-web/.nuxt/
-web/.output/
+# Web UI build outputs
+webui/dist/
+webui/build/
+webui/.nuxt/
+webui/.output/
 
-# Web dependencies
-web/node_modules/
+# Web UI dependencies
+webui/node_modules/
 
-# Web environment
-web/.env
-web/.env.local
-web/.env.*.local
+# Web UI environment
+webui/.env
+webui/.env.local
+webui/.env.*.local
 
-# Test artifacts
-*.test.js
-*.test.js.map
-*.spec.js
-*.spec.js.map
+# Web UI build artifacts
+webui/dist/
+webui/.nuxt/
+webui/.output/

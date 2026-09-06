@@ -31,7 +31,7 @@ social-feed-aggregator/
 │   ├── mcp/              # MCP Server
 │   ├── scheduler/         # 定时任务
 │   └── core/              # 核心配置
-├── web/                   # React 前端
+├── webui/                   # React 前端
 │   └── src/
 ├── docker/                # Docker 配置
 ├── migrations/            # 数据库迁移
