@@ -1,0 +1,13 @@
+# ============ Full Stack Override ============
+# 使用方式: docker-compose -f docker-compose.yml -f docker-compose.full.yml up
+
+services:
+  # 替换为完整版镜像
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.full
+    container_name: social_feed_full
+    ports:
+      - "80:80"
+      - "8000:8000"

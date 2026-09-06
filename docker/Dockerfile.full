@@ -1,0 +1,66 @@
+# ============ Full Stack Dockerfile ============
+# 包含: API + Celery Worker + Celery Beat + Frontend
+
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# 安装系统依赖 + Node.js
+RUN apt-get update && apt-get install -y \
+    gcc \
+    libpq-dev \
+    curl \
+    gnupg \
+    nginx \
+    && rm -rf /var/lib/apt/lists/*
+
+# 安装 Node.js 20
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# ============ Python 部分 ============
+COPY pyproject.toml README.md ./
+RUN pip install --no-cache-dir -e .
+
+# 复制源代码
+COPY src/ ./src/
+COPY migrations/ ./migrations/
+
+# ============ 前端部分 ============
+COPY webui/ ./webui/
+WORKDIR /app/webui
+RUN npm ci && npm run build
+
+WORKDIR /app
+
+# ============ Nginx 配置 ============
+RUN echo 'server { \
+    listen 80; \
+    server_name _; \
+    root /app/webui/dist; \
+    index index.html; \
+    location / { \
+        try_files $uri $uri/ /index.html; \
+    } \
+    location /api/ { \
+        proxy_pass http://localhost:8000/; \
+        proxy_set_header Host $host; \
+        proxy_set_header X-Real-IP $remote_addr; \
+    } \
+}' > /etc/nginx/sites-available/default \
+&& ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
+
+# 复制启动脚本
+COPY docker/start-full.sh /usr/local/bin/start-full.sh
+RUN chmod +x /usr/local/bin/start-full.sh
+
+# 创建非 root 用户
+RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+USER appuser
+
+# 暴露端口
+EXPOSE 80 8000
+
+# 启动所有服务
+CMD ["/usr/local/bin/start-full.sh"]
